@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/dev/Shoots.Host/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
