@@ -1,34 +1,40 @@
-# Build artifacts
-/build/
-/out/
-/bin/
-/Release/
-/Debug/
+# ---- build outputs ----
+build/
+out/
+bin/
+obj/
 
-# CMake
-CMakeCache.txt
+# ---- CMake ----
 CMakeFiles/
+CMakeCache.txt
 cmake_install.cmake
 Makefile
-*.cmake.user
+*.ninja
+.ninja_*
 
-# MSVC
-*.sln
-*.vcxproj*
-*.obj
+# ---- IDE / tooling ----
+.vs/
+.idea/
+*.user
+*.suo
+
+# ---- MSVC / Windows build junk ----
 *.tlog
-*.recipe
+*.log
+*.idb
 *.pdb
 *.ilk
-*.idb
+*.obj
 *.exe
-*.log
-.vs/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+*.dll
+*.lib
 
-# OS
+# ---- Linux/clang/gcc build junk ----
+*.o
+*.a
+*.so
+*.dSYM/
+
+# ---- OS junk ----
 .DS_Store
 Thumbs.db
