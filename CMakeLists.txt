@@ -5,10 +5,17 @@ project(ShootsHost VERSION 0.1.0 LANGUAGES C CXX)
 include(cmake/Options.cmake)
 include(cmake/Warnings.cmake)
 
-find_package(ShootsProvider CONFIG REQUIRED)
+find_package(ShootsProvider CONFIG QUIET)
+if (NOT ShootsProvider_FOUND)
+  message(FATAL_ERROR
+    "ShootsProvider package not found. Install Shoots.Provider and ensure ShootsProviderConfig.cmake is discoverable, "
+    "or pass -DCMAKE_PREFIX_PATH=<prefix> where it is installed.")
+endif()
 
 add_executable(ShootsHost
   src/main.cpp
+  src/jobs/job_store.cpp
+  src/provider_bridge/provider_bridge.cpp
   src/routes/routes.cpp
   src/server/app_state.cpp
   src/server/http_server.cpp

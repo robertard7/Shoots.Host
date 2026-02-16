@@ -1,5 +1,8 @@
 #pragma once
 
+#include "jobs/job_store.h"
+#include "provider_bridge/provider_bridge.h"
+
 #include <cstddef>
 
 namespace shoots::host {
@@ -14,9 +17,13 @@ public:
     AppState();
 
     [[nodiscard]] const AppConfig& Config() const;
+    [[nodiscard]] JobStore& Jobs();
+    [[nodiscard]] ProviderBridge& Provider();
 
 private:
     AppConfig config_;
+    JobStore jobs_;
+    ProviderBridge provider_;
 };
 
 } // namespace shoots::host

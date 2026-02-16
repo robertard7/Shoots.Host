@@ -13,21 +13,43 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v4
-      - name: Install Ninja
-        run: sudo apt-get update && sudo apt-get install -y ninja-build
-      - name: Configure
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y ninja-build cmake build-essential curl
+      - name: Clone provider
+        run: git clone --depth 1 https://github.com/robertard7/Shoots.Provider.git ${{ github.workspace }}/_deps/Shoots.Provider
+      - name: Build + install provider
+        run: |
+          cmake -S ${{ github.workspace }}/_deps/Shoots.Provider -B ${{ github.workspace }}/_deps/Shoots.Provider/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/_inst/shoots
+          cmake --build ${{ github.workspace }}/_deps/Shoots.Provider/build
+          cmake --install ${{ github.workspace }}/_deps/Shoots.Provider/build
+      - name: Configure host
         env:
           CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
           CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
-        run: cmake -S . -B build -G Ninja
-      - name: Build
+        run: cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=${{ github.workspace }}/_inst/shoots
+      - name: Build host
         run: cmake --build build
+      - name: Smoke health endpoint
+        run: |
+          ./build/ShootsHost &
+          pid=$!
+          trap 'kill $pid >/dev/null 2>&1 || true' EXIT
+          sleep 1
+          curl -fsS http://127.0.0.1:8787/health | tee out.json
+          grep -F '"ok":true' out.json
 
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -S . -B build
-      - name: Build
+      - name: Clone provider
+        run: git clone --depth 1 https://github.com/robertard7/Shoots.Provider.git ${{ github.workspace }}\_deps\Shoots.Provider
+      - name: Build + install provider
+        run: |
+          cmake -S ${{ github.workspace }}\_deps\Shoots.Provider -B ${{ github.workspace }}\_deps\Shoots.Provider\build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\_inst\Shoots
+          cmake --build ${{ github.workspace }}\_deps\Shoots.Provider\build --config Release
+          cmake --install ${{ github.workspace }}\_deps\Shoots.Provider\build --config Release
+      - name: Configure host
+        run: cmake -S . -B build -DCMAKE_PREFIX_PATH=${{ github.workspace }}\_inst\Shoots
+      - name: Build host
         run: cmake --build build --config Release
