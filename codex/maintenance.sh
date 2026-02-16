@@ -15,17 +15,16 @@ log() { printf '[maint] %s\n' "$*"; }
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
-
 log "repo: $REPO_ROOT"
 log "CMAKE_PREFIX_PATH: $CMAKE_PREFIX_PATH"
 
 git config --global advice.detachedHead false || true
 
-# Keep submodules aligned; never block the job if GitHub hiccups.
+# Keep submodules aligned; never block if GitHub hiccups.
 git submodule sync --recursive || true
 git -c submodule.external/cpp-httplib.update=none submodule update --init --recursive || true
 
-# If scripts exist, make sure they're executable.
+# Ensure helper scripts can run
 if [ -d "./scripts" ]; then
   chmod +x ./scripts/*.sh 2>/dev/null || true
 fi
@@ -38,7 +37,7 @@ if command -v mise >/dev/null 2>&1; then
   fi
 fi
 
-# Fast path: if build dir exists, just build. Otherwise configure + build.
+# Incremental build if possible, else configure+build.
 if [ -d "build" ] && [ -f "build/build.ninja" ]; then
   log "incremental build"
   cmake --build build
