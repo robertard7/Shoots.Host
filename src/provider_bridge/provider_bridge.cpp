@@ -6,13 +6,20 @@ namespace shoots::host {
 
 ProviderBridge::ProviderBridge() = default;
 
-bool ProviderBridge::Initialize() {
+bool ProviderBridge::Initialize(const std::string& default_model_id, std::uint64_t max_payload_bytes) {
+    if (initialized_) {
+        return true;
+    }
+
+    default_model_id_ = default_model_id.empty() ? "provider-default" : default_model_id;
+    capabilities_.max_payload_bytes = max_payload_bytes;
+    initialized_ = true;
     return true;
 }
 
 std::vector<ProviderModelMeta> ProviderBridge::ListModelsMeta() const {
     return {
-        {"provider-default", "provider-default"},
+        {default_model_id_, default_model_id_},
     };
 }
 
@@ -20,6 +27,10 @@ std::vector<ProviderTemplateMeta> ProviderBridge::ListTemplatesMeta() const {
     return {
         {"build/default", "Default deterministic build template"},
     };
+}
+
+ProviderCapabilities ProviderBridge::GetCapabilities() const {
+    return capabilities_;
 }
 
 std::uint64_t ProviderBridge::SubmitChat(const std::string& payload) {
@@ -42,7 +53,7 @@ void ProviderBridge::Poll() {
         ProviderResult result;
         result.request_id = request.request_id;
         result.content_type = "application/json";
-        result.payload = "{\"type\":\"" + request.type + "\",\"echo\":" + request.payload + "}";
+        result.payload = "{\"requestId\":" + std::to_string(request.request_id) + ",\"type\":\"" + request.type + "\"}";
         ready_.push_back(std::move(result));
     }
     pending_.clear();

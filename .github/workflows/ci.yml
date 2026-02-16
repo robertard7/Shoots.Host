@@ -26,9 +26,11 @@ jobs:
         env:
           CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
           CXX: ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
-        run: cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=${{ github.workspace }}/_inst/shoots
+        run: cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=${{ github.workspace }}/_inst/shoots -DSHOOTS_HOST_BUILD_TESTS=ON
       - name: Build host
         run: cmake --build build
+      - name: Run golden snapshots
+        run: ./build/HostGoldenSnapshots
       - name: Smoke health endpoint
         run: |
           ./build/ShootsHost &

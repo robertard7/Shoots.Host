@@ -14,6 +14,7 @@ endif()
 
 add_executable(ShootsHost
   src/main.cpp
+  src/http/error_envelopes.cpp
   src/jobs/job_store.cpp
   src/provider_bridge/provider_bridge.cpp
   src/routes/routes.cpp
@@ -32,3 +33,23 @@ target_link_libraries(ShootsHost PRIVATE Shoots::ShootsProvider)
 
 target_compile_features(ShootsHost PRIVATE cxx_std_20)
 shoots_host_apply_warnings(ShootsHost)
+
+if (SHOOTS_HOST_BUILD_TESTS)
+  add_executable(HostGoldenSnapshots
+    tests/contract/host_golden_snapshots.cpp
+    src/http/error_envelopes.cpp
+    src/jobs/job_store.cpp
+    src/provider_bridge/provider_bridge.cpp
+    src/routes/routes.cpp
+    src/server/app_state.cpp
+    src/server/json_writer.cpp
+  )
+
+  target_include_directories(HostGoldenSnapshots PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib"
+  )
+  target_link_libraries(HostGoldenSnapshots PRIVATE Shoots::ShootsProvider)
+  target_compile_features(HostGoldenSnapshots PRIVATE cxx_std_20)
+  shoots_host_apply_warnings(HostGoldenSnapshots)
+endif()

@@ -5,10 +5,8 @@ PREFIX="${CMAKE_PREFIX_PATH:-/opt/shoots}"
 DEPS_DIR="${TMPDIR:-/tmp}/Shoots.Provider"
 BUILD_DIR="${DEPS_DIR}/build"
 
-if command -v apt-get >/dev/null 2>&1; then
-  sudo apt-get update
-  sudo apt-get install -y cmake ninja-build build-essential git
-fi
+sudo apt-get update
+sudo apt-get install -y cmake ninja-build g++ git ca-certificates
 
 if [ ! -d "${DEPS_DIR}" ]; then
   git clone --depth 1 https://github.com/robertard7/Shoots.Provider.git "${DEPS_DIR}"

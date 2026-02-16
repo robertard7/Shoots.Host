@@ -6,10 +6,13 @@ namespace shoots::host {
 
 JobStore::JobStore(std::size_t max_jobs) : max_jobs_(max_jobs == 0 ? 1 : max_jobs) {}
 
-JobRecord JobStore::Create(std::string request_type, std::uint64_t provider_request_id) {
+JobRecord JobStore::Create(std::string request_type, std::string model_id, std::string tool_id, std::string template_id, std::uint64_t provider_request_id) {
     JobRecord record;
     record.job_id = std::to_string(next_job_id_++);
     record.request_type = std::move(request_type);
+    record.model_id = std::move(model_id);
+    record.tool_id = std::move(tool_id);
+    record.template_id = std::move(template_id);
     record.provider_request_id = provider_request_id;
     record.created_tick = next_tick_++;
     record.status = JobStatus::kQueued;
@@ -47,23 +50,13 @@ std::optional<JobRecord> JobStore::Get(const std::string& job_id) const {
     return it->second;
 }
 
-std::optional<JobRecord> JobStore::FindByProviderRequestId(std::uint64_t request_id) const {
-    for (const std::string& job_id : order_) {
-        const auto it = jobs_.find(job_id);
-        if (it != jobs_.end() && it->second.provider_request_id == request_id) {
-            return it->second;
-        }
-    }
-    return std::nullopt;
-}
-
 std::optional<JobRecord> JobStore::TakeResult(const std::string& job_id) {
     const auto it = jobs_.find(job_id);
-    if (it == jobs_.end() || it->second.result.empty()) {
+    if (it == jobs_.end() || it->second.result.empty() || it->second.result_taken) {
         return std::nullopt;
     }
     JobRecord taken = it->second;
-    it->second.result.clear();
+    it->second.result_taken = true;
     return taken;
 }
 

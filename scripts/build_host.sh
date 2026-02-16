@@ -10,6 +10,6 @@ HOST_PID=$!
 trap 'kill ${HOST_PID} >/dev/null 2>&1 || true' EXIT
 
 sleep 1
-curl -fsS http://127.0.0.1:8787/health | tee /tmp/shoots-host-health.json
+curl -fsS http://127.0.0.1:8787/health | tee health.json
 kill ${HOST_PID} >/dev/null 2>&1 || true
 wait ${HOST_PID} 2>/dev/null || true

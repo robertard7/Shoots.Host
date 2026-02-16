@@ -3,7 +3,7 @@
 namespace shoots::host {
 
 AppState::AppState() : jobs_(config_.max_jobs) {
-    provider_.Initialize();
+    provider_.Initialize(config_.default_model_id, config_.max_body_bytes);
 }
 
 const AppConfig& AppState::Config() const {
