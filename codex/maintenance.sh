@@ -3,8 +3,11 @@ set -euo pipefail
 
 export GIT_TERMINAL_PROMPT=0
 export GIT_ASKPASS=/bin/true
+
 export MISE_NO_ANALYTICS=1
 export MISE_LOG_LEVEL="${MISE_LOG_LEVEL:-error}"
+
+cd /workspace/Shoots.Host
 
 PREFIX="${CMAKE_PREFIX_PATH:-/opt/shoots}"
 
