@@ -35,6 +35,7 @@ Submit endpoints use strict object-shape validation.
 ## Build and run (Linux)
 
 ```bash
+export CMAKE_PREFIX_PATH=/opt/shoots
 ./scripts/setup_provider_prefix.sh
 ./scripts/build_host.sh
 ```
@@ -70,6 +71,20 @@ For maintenance rebuilds:
 ```bash
 ./codex/maintenance.sh
 ```
+
+Scripts are non-interactive (`GIT_TERMINAL_PROMPT=0`, `GIT_ASKPASS=/bin/true`) and use bounded-time clone/build steps when `timeout` is available.
+
+## Codex branch/push flow
+
+```bash
+git checkout -b codex/<topic>
+git push -u origin HEAD
+```
+
+## Third-party dependency strategy
+
+- `cpp-httplib` is vendored as `external/httplib/httplib.h`.
+- Codex setup does not require submodule checkout for HTTP hosting.
 
 ## Contract
 

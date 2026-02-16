@@ -16,6 +16,7 @@
 namespace shoots::host {
 
 namespace {
+
 void WriteJson(httplib::Response& response, int status_code, const JsonValue& value) {
     response.status = status_code;
     response.set_header("Content-Type", "application/json");
@@ -104,11 +105,11 @@ std::optional<std::string> ExtractStringValue(const std::string& body, const std
         return std::nullopt;
     }
 
-    std::size_t first_quote = body.find('"', colon_pos + 1);
+    const std::size_t first_quote = body.find('"', colon_pos + 1);
     if (first_quote == std::string::npos) {
         return std::nullopt;
     }
-    std::size_t second_quote = body.find('"', first_quote + 1);
+    const std::size_t second_quote = body.find('"', first_quote + 1);
     if (second_quote == std::string::npos) {
         return std::nullopt;
     }
@@ -117,10 +118,7 @@ std::optional<std::string> ExtractStringValue(const std::string& body, const std
 }
 
 bool ValidateEnvelopeShape(const std::string& body) {
-    if (body.empty() || body.front() != '{' || body.back() != '}') {
-        return false;
-    }
-    return true;
+    return !(body.empty() || body.front() != '{' || body.back() != '}');
 }
 
 void ApplyProviderResult(AppState& app, const std::string& job_id) {
@@ -195,10 +193,12 @@ bool ParseTimeoutMs(const httplib::Request& request, std::size_t& timeout_ms) {
         timeout_ms = 500;
         return true;
     }
+
     const std::string raw = request.get_param_value("timeout_ms");
     if (raw.empty()) {
         return false;
     }
+
     std::size_t value = 0;
     for (const char c : raw) {
         if (c < '0' || c > '9') {
@@ -209,7 +209,8 @@ bool ParseTimeoutMs(const httplib::Request& request, std::size_t& timeout_ms) {
     timeout_ms = value;
     return true;
 }
-}
+
+} // namespace
 
 void RegisterRoutes(httplib::Server& server, AppState& app) {
     server.Get("/health", [](const httplib::Request&, httplib::Response& response) {
@@ -226,7 +227,6 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         data.Set("supportsBuild", caps.supports_build);
         data.Set("supportsChat", caps.supports_chat);
         data.Set("supportsTool", caps.supports_tool);
-
         WriteJson(response, 200, Ok(data));
     });
 

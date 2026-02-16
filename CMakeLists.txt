@@ -26,7 +26,7 @@ add_executable(ShootsHost
 target_include_directories(ShootsHost PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/server"
-  "${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib"
+  "${CMAKE_CURRENT_SOURCE_DIR}/external/httplib"
 )
 
 target_link_libraries(ShootsHost PRIVATE Shoots::ShootsProvider)
@@ -47,7 +47,7 @@ if (SHOOTS_HOST_BUILD_TESTS)
 
   target_include_directories(HostGoldenSnapshots PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/cpp-httplib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/httplib"
   )
   target_link_libraries(HostGoldenSnapshots PRIVATE Shoots::ShootsProvider)
   target_compile_features(HostGoldenSnapshots PRIVATE cxx_std_20)
