@@ -1,4 +1,8 @@
-﻿#include "http_server.h"
+#include "http_server.h"
+
+#include "routes/routes.h"
+#include "server/app_state.h"
+
 #include <httplib.h>
 #include <memory>
 
@@ -6,6 +10,7 @@ namespace shoots::host {
 
 struct HttpServer::Impl {
     std::unique_ptr<httplib::Server> server;
+    std::unique_ptr<AppState> app_state;
     std::string bind;
     int port = 0;
 };
@@ -15,14 +20,11 @@ HttpServer::~HttpServer() { delete _impl; }
 
 bool HttpServer::Start(const std::string& bindAddr, int port) {
     _impl->server = std::make_unique<httplib::Server>();
+    _impl->app_state = std::make_unique<AppState>();
     _impl->bind = bindAddr;
     _impl->port = port;
 
-    _impl->server->Get("/health", [](const httplib::Request&, httplib::Response& res) {
-        res.set_header("Content-Type", "application/json");
-        res.status = 200;
-        res.body = R"({"ok":true})";
-    });
+    RegisterRoutes(*_impl->server, *_impl->app_state);
 
     return true;
 }
