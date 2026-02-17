@@ -10,7 +10,10 @@ if [ -f .gitmodules ]; then
   echo ".gitmodules is not allowed" >&2
   exit 1
 fi
-if git submodule status --recursive | grep -q .; then
+
+# Guard against historical submodule metadata without invoking submodule commands.
+if git config --file .git/config --name-only --get-regexp '^submodule\..*\.path$' \
+  >/dev/null 2>&1; then
   echo "submodule entries are not allowed" >&2
   exit 1
 fi
