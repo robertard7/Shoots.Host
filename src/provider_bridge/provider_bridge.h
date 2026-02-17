@@ -34,11 +34,14 @@ class ProviderBridge final {
 public:
     ProviderBridge();
 
-    bool Initialize(const std::string& default_model_id, std::uint64_t max_payload_bytes);
+    bool Initialize(const std::string& default_model_id, std::uint64_t max_payload_bytes, std::string endpoint);
 
     std::vector<ProviderModelMeta> ListModelsMeta() const;
     std::vector<ProviderTemplateMeta> ListTemplatesMeta() const;
     ProviderCapabilities GetCapabilities() const;
+    [[nodiscard]] bool IsReady() const;
+    [[nodiscard]] std::string BuildVersion() const;
+    [[nodiscard]] std::string Endpoint() const;
 
     std::uint64_t SubmitChat(const std::string& payload);
     std::uint64_t SubmitTool(const std::string& payload);
@@ -56,6 +59,7 @@ private:
 
     bool initialized_ = false;
     std::string default_model_id_ = "provider-default";
+    std::string endpoint_ = "in-memory://provider-bridge";
     ProviderCapabilities capabilities_;
     std::uint64_t next_request_id_ = 1;
     std::vector<PendingRequest> pending_;

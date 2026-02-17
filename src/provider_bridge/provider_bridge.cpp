@@ -6,13 +6,14 @@ namespace shoots::host {
 
 ProviderBridge::ProviderBridge() = default;
 
-bool ProviderBridge::Initialize(const std::string& default_model_id, std::uint64_t max_payload_bytes) {
+bool ProviderBridge::Initialize(const std::string& default_model_id, std::uint64_t max_payload_bytes, std::string endpoint) {
     if (initialized_) {
         return true;
     }
 
     default_model_id_ = default_model_id.empty() ? "provider-default" : default_model_id;
     capabilities_.max_payload_bytes = max_payload_bytes;
+    endpoint_ = endpoint.empty() ? "in-memory://provider-bridge" : std::move(endpoint);
     initialized_ = true;
     return true;
 }
@@ -31,6 +32,18 @@ std::vector<ProviderTemplateMeta> ProviderBridge::ListTemplatesMeta() const {
 
 ProviderCapabilities ProviderBridge::GetCapabilities() const {
     return capabilities_;
+}
+
+bool ProviderBridge::IsReady() const {
+    return initialized_;
+}
+
+std::string ProviderBridge::BuildVersion() const {
+    return "provider-bridge/0.1.0";
+}
+
+std::string ProviderBridge::Endpoint() const {
+    return endpoint_;
 }
 
 std::uint64_t ProviderBridge::SubmitChat(const std::string& payload) {

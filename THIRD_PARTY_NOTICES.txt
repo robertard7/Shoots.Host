@@ -1,0 +1,11 @@
+Third-Party Notices
+
+httplib
+- Source: https://github.com/yhirose/httplib
+- License: MIT
+- Vendored file: external/httplib/httplib.h
+
+ShootsProvider
+- Source: https://github.com/robertard7/Shoots.Provider
+- License: See provider repository
+

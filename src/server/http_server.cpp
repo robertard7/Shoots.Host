@@ -18,9 +18,9 @@ struct HttpServer::Impl {
 HttpServer::HttpServer() : _impl(new Impl()) {}
 HttpServer::~HttpServer() { delete _impl; }
 
-bool HttpServer::Start(const std::string& bindAddr, int port) {
+bool HttpServer::Start(const std::string& bindAddr, int port, AppConfig config) {
     _impl->server = std::make_unique<httplib::Server>();
-    _impl->app_state = std::make_unique<AppState>();
+    _impl->app_state = std::make_unique<AppState>(std::move(config));
     _impl->bind = bindAddr;
     _impl->port = port;
 
@@ -31,6 +31,19 @@ bool HttpServer::Start(const std::string& bindAddr, int port) {
 
 void HttpServer::BlockingRun() {
     _impl->server->listen(_impl->bind.c_str(), _impl->port);
+}
+
+void HttpServer::Stop() {
+    if (_impl->server) {
+        _impl->server->stop();
+    }
+}
+
+std::size_t HttpServer::InflightRequests() const {
+    if (!_impl->app_state) {
+        return 0;
+    }
+    return static_cast<std::size_t>(_impl->app_state->Metrics().requests_inflight);
 }
 
 } // namespace shoots::host

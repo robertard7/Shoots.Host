@@ -1,8 +1,12 @@
 $ErrorActionPreference = 'Stop'
 
-$env:SHOOTS_HOST_PORT = '8787'
+$repoRoot = (git rev-parse --show-toplevel).Trim()
+Set-Location $repoRoot
 
-$proc = Start-Process -FilePath ".\build\Release\ShootsHost.exe" -PassThru
+$env:SHOOTS_HOST_PORT = if ($env:SHOOTS_HOST_PORT) { $env:SHOOTS_HOST_PORT } else { '8787' }
+$env:SHOOTS_HOST_BIND = if ($env:SHOOTS_HOST_BIND) { $env:SHOOTS_HOST_BIND } else { '127.0.0.1' }
+
+$proc = Start-Process -FilePath ".\build\Release\ShootsHost.exe" -ArgumentList @('--bind', $env:SHOOTS_HOST_BIND, '--port', $env:SHOOTS_HOST_PORT) -PassThru
 Start-Sleep -Seconds 1
-Invoke-RestMethod -Uri 'http://127.0.0.1:8787/health'
+Invoke-RestMethod -Uri "http://$($env:SHOOTS_HOST_BIND):$($env:SHOOTS_HOST_PORT)/healthz" | Out-Null
 Stop-Process -Id $proc.Id
