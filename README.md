@@ -7,11 +7,12 @@ Shoots.Host is a transport-neutral HTTP host for `Shoots.Provider`.
 - `Shoots.Provider` is the authority for model behavior, capabilities, templates, and limits.
 - Provider progress is host-driven via explicit polling; provider remains deterministic and threadless.
 - Host can use a blocking event loop only and keeps deterministic response ordering.
-- Host response shape is deterministic through stable JSON key ordering and monotonic job IDs.
+- Host response shape is deterministic through stable JSON key ordering and monotonic request IDs.
 
 ## API endpoints
 
-- `GET /health`
+- `GET /healthz`
+- `GET /readyz`
 - `GET /v1/caps`
 - `GET /v1/models`
 - `GET /v1/templates`
@@ -32,19 +33,43 @@ Submit endpoints use strict object-shape validation.
 - `modelId` has a size cap.
 - Over-size request body fails at host boundary.
 
-## Build and run (Linux)
+## How to run
+
+Build (Release):
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/shoots
+cmake --build build --config Release
+```
+
+Run (env + flags):
+
+```bash
+export SHOOTS_HOST_PORT=8787
+export SHOOTS_HOST_BIND=127.0.0.1
+export SHOOTS_HOST_LOG_LEVEL=info
+./build/ShootsHost --port "$SHOOTS_HOST_PORT" --bind "$SHOOTS_HOST_BIND" --log-level "$SHOOTS_HOST_LOG_LEVEL"
+```
+
+Example curl checks:
+
+```bash
+curl -s http://127.0.0.1:8787/healthz
+curl -s http://127.0.0.1:8787/readyz
+```
+
+Troubleshooting:
+
+- Missing provider prefix: set `CMAKE_PREFIX_PATH=/opt/shoots` and ensure `ShootsProviderConfig.cmake` exists under that prefix.
+- Provider not ready: check startup logs for `provider.ready` and `provider.endpoint` values.
+
+## Build and run (Linux helper scripts)
 
 ```bash
 export CMAKE_PREFIX_PATH=/opt/shoots
 ./scripts/setup_provider_prefix.sh
 ./scripts/build_host.sh
-```
-
-Manual configure/build:
-
-```bash
-cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=/opt/shoots
-cmake --build build
+./scripts/run_host.sh
 ```
 
 ## Build and run (Windows)
@@ -72,14 +97,7 @@ For maintenance rebuilds:
 ./codex/maintenance.sh
 ```
 
-Scripts are non-interactive (`GIT_TERMINAL_PROMPT=0`, `GIT_ASKPASS=/bin/true`) and use bounded-time clone/build steps when `timeout` is available.
-
-## Codex branch/push flow
-
-```bash
-git checkout -b codex/<topic>
-git push -u origin HEAD
-```
+Scripts are non-interactive (`GIT_TERMINAL_PROMPT=0`, `GIT_ASKPASS=/bin/true`).
 
 ## Third-party dependency strategy
 

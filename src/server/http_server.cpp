@@ -18,9 +18,9 @@ struct HttpServer::Impl {
 HttpServer::HttpServer() : _impl(new Impl()) {}
 HttpServer::~HttpServer() { delete _impl; }
 
-bool HttpServer::Start(const std::string& bindAddr, int port) {
+bool HttpServer::Start(const std::string& bindAddr, int port, AppConfig config) {
     _impl->server = std::make_unique<httplib::Server>();
-    _impl->app_state = std::make_unique<AppState>();
+    _impl->app_state = std::make_unique<AppState>(std::move(config));
     _impl->bind = bindAddr;
     _impl->port = port;
 

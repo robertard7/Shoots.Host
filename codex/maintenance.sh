@@ -7,11 +7,11 @@ export GIT_ASKPASS=/bin/true
 export MISE_NO_ANALYTICS=1
 export MISE_LOG_LEVEL="${MISE_LOG_LEVEL:-error}"
 
-cd /workspace/Shoots.Host
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
 
 PREFIX="${CMAKE_PREFIX_PATH:-/opt/shoots}"
 
-# Safety: if provider isn't installed, fail with a clear message.
 if [ ! -f "$PREFIX/lib/cmake/ShootsProvider/ShootsProviderConfig.cmake" ]; then
   echo "ShootsProvider not installed under: $PREFIX"
   echo "Run setup script first (it installs Shoots.Provider into the prefix)."

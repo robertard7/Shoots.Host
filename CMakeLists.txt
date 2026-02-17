@@ -34,7 +34,11 @@ target_link_libraries(ShootsHost PRIVATE Shoots::ShootsProvider)
 target_compile_features(ShootsHost PRIVATE cxx_std_20)
 shoots_host_apply_warnings(ShootsHost)
 
+install(TARGETS ShootsHost RUNTIME DESTINATION bin)
+
 if (SHOOTS_HOST_BUILD_TESTS)
+  enable_testing()
+
   add_executable(HostGoldenSnapshots
     tests/contract/host_golden_snapshots.cpp
     src/http/error_envelopes.cpp
@@ -51,5 +55,8 @@ if (SHOOTS_HOST_BUILD_TESTS)
   )
   target_link_libraries(HostGoldenSnapshots PRIVATE Shoots::ShootsProvider)
   target_compile_features(HostGoldenSnapshots PRIVATE cxx_std_20)
+  target_compile_definitions(HostGoldenSnapshots PRIVATE SHOOTS_HOST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   shoots_host_apply_warnings(HostGoldenSnapshots)
+
+  add_test(NAME HostGoldenSnapshots COMMAND HostGoldenSnapshots)
 endif()
