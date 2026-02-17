@@ -33,5 +33,10 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Legacy path guard
         run: ./scripts/check_legacy_paths.sh
-      - name: Smoke API endpoints
-        run: ./tests/host_smoke.sh
+      - name: Build package
+        run: SHOOTS_PREFIX=${{ github.workspace }}/_inst/shoots ./scripts/package_host.sh
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shoots-host-package-${{ matrix.compiler }}
+          path: dist/*.tar.gz

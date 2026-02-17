@@ -1,8 +1,11 @@
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 int main() {
+    const bool update_snapshots = std::getenv("SHOOTS_UPDATE_SNAPSHOTS") != nullptr;
+
     const struct {
         const char* file;
         const char* expected;
@@ -20,11 +23,21 @@ int main() {
         {"/tests/golden/error-payload-too-large.json", "{\"error\":{\"code\":\"payload_too_large\",\"details\":{\"field\":\"body\",\"reason\":\"too_large\"},\"message\":\"request body too large\"},\"ok\":false}\n"},
         {"/tests/golden/error-too-many-requests.json", "{\"error\":{\"code\":\"too_many_requests\",\"details\":{\"field\":\"requests\",\"reason\":\"max_inflight\"},\"message\":\"too many in-flight requests\"},\"ok\":false}\n"},
         {"/tests/golden/error-unauthorized.json", "{\"error\":{\"code\":\"unauthorized\",\"details\":{\"field\":\"X-Api-Key\",\"reason\":\"missing_or_invalid\"},\"message\":\"api key is required\"},\"ok\":false}\n"},
-        {"/tests/golden/print-config.json", "{\"api_key_enabled\":false,\"bind\":\"127.0.0.1\",\"cors_origin\":\"\",\"log_level\":\"info\",\"max_body_bytes\":1048576,\"max_inflight\":64,\"port\":8787,\"provider_endpoint\":\"in-memory://provider-bridge\",\"req_timeout_ms\":1000,\"shutdown_drain_ms\":2000}\n"},
+        {"/tests/golden/print-config.json", "{\"api_key_enabled\":false,\"bind\":\"127.0.0.1\",\"cors_origin\":\"\",\"log_format\":\"text\",\"log_level\":\"info\",\"max_body_bytes\":1048576,\"max_inflight\":64,\"port\":8787,\"provider_endpoint\":\"in-memory://provider-bridge\",\"req_timeout_ms\":1000,\"shutdown_drain_ms\":2000,\"version\":\"0.1.0\"}\n"},
     };
 
     for (const auto& snapshot : snapshots) {
         const std::string path = std::string(SHOOTS_HOST_SOURCE_DIR) + snapshot.file;
+        if (update_snapshots) {
+            std::ofstream out(path, std::ios::trunc);
+            if (!out) {
+                std::cerr << "Cannot update snapshot: " << path << "\n";
+                return 1;
+            }
+            out << snapshot.expected;
+            continue;
+        }
+
         std::ifstream in(path);
         if (!in) {
             std::cerr << "Missing snapshot: " << path << "\n";

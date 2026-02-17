@@ -21,10 +21,12 @@ add_executable(ShootsHost
   src/server/app_state.cpp
   src/server/http_server.cpp
   src/server/json_writer.cpp
+  src/server/logging.cpp
 )
 set_target_properties(ShootsHost PROPERTIES OUTPUT_NAME shoots-host)
 
 target_include_directories(ShootsHost PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/server"
   "${CMAKE_CURRENT_SOURCE_DIR}/external/httplib"
@@ -36,7 +38,7 @@ target_compile_features(ShootsHost PRIVATE cxx_std_20)
 shoots_host_apply_warnings(ShootsHost)
 
 install(TARGETS ShootsHost RUNTIME DESTINATION bin)
-install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/shoots-host)
+install(FILES LICENSE THIRD_PARTY_NOTICES.txt DESTINATION share/shoots-host)
 install(PROGRAMS scripts/run_host.sh DESTINATION share/shoots-host)
 
 if (SHOOTS_HOST_BUILD_TESTS)
@@ -53,6 +55,7 @@ if (SHOOTS_HOST_BUILD_TESTS)
   )
 
   target_include_directories(HostGoldenSnapshots PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/httplib"
   )
@@ -62,4 +65,17 @@ if (SHOOTS_HOST_BUILD_TESTS)
   shoots_host_apply_warnings(HostGoldenSnapshots)
 
   add_test(NAME HostGoldenSnapshots COMMAND HostGoldenSnapshots)
+
+  add_executable(HostLogLineTest
+    tests/contract/host_log_line_test.cpp
+    src/server/json_writer.cpp
+    src/server/logging.cpp
+  )
+  target_include_directories(HostLogLineTest PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  target_compile_features(HostLogLineTest PRIVATE cxx_std_20)
+  shoots_host_apply_warnings(HostLogLineTest)
+
+  add_test(NAME HostLogLineTest COMMAND HostLogLineTest)
 endif()

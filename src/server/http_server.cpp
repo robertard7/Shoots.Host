@@ -33,4 +33,17 @@ void HttpServer::BlockingRun() {
     _impl->server->listen(_impl->bind.c_str(), _impl->port);
 }
 
+void HttpServer::Stop() {
+    if (_impl->server) {
+        _impl->server->stop();
+    }
+}
+
+std::size_t HttpServer::InflightRequests() const {
+    if (!_impl->app_state) {
+        return 0;
+    }
+    return static_cast<std::size_t>(_impl->app_state->Metrics().requests_inflight);
+}
+
 } // namespace shoots::host
