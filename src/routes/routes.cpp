@@ -3,12 +3,12 @@
 #include "http/error_envelopes.h"
 #include "server/app_state.h"
 #include "server/json_writer.h"
+#include "server/request_id.h"
 
 #include <httplib.h>
 
 #include <chrono>
 #include <cctype>
-#include <cstdio>
 #include <optional>
 #include <set>
 #include <string>
@@ -31,7 +31,6 @@ private:
     bool accepted_ = false;
 };
 
-std::string FormatRequestId(std::uint64_t sequence);
 
 void ApplyCors(const AppState& app, httplib::Response& response) {
     if (!app.Config().cors_origin.empty()) {
@@ -83,12 +82,6 @@ bool RequireApiKey(AppState& app, RequestScope& scope, const httplib::Request& r
     }
     WriteError(app, scope, response, 401, "unauthorized", "api key is required", {"X-Api-Key", "missing_or_invalid"});
     return false;
-}
-
-std::string FormatRequestId(std::uint64_t sequence) {
-    char buffer[32];
-    std::snprintf(buffer, sizeof(buffer), "req-%06llu", static_cast<unsigned long long>(sequence));
-    return buffer;
 }
 
 JsonValue Ok(JsonValue result) {

@@ -22,6 +22,7 @@ add_executable(ShootsHost
   src/server/http_server.cpp
   src/server/json_writer.cpp
   src/server/logging.cpp
+  src/server/request_id.cpp
 )
 set_target_properties(ShootsHost PROPERTIES OUTPUT_NAME shoots-host)
 
@@ -52,6 +53,7 @@ if (SHOOTS_HOST_BUILD_TESTS)
     src/routes/routes.cpp
     src/server/app_state.cpp
     src/server/json_writer.cpp
+    src/server/request_id.cpp
   )
 
   target_include_directories(HostGoldenSnapshots PRIVATE
@@ -78,4 +80,18 @@ if (SHOOTS_HOST_BUILD_TESTS)
   shoots_host_apply_warnings(HostLogLineTest)
 
   add_test(NAME HostLogLineTest COMMAND HostLogLineTest)
+
+
+  add_executable(HostHeaderSnapshotTest
+    tests/contract/host_header_snapshot_test.cpp
+    src/server/request_id.cpp
+  )
+  target_include_directories(HostHeaderSnapshotTest PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  )
+  target_compile_features(HostHeaderSnapshotTest PRIVATE cxx_std_20)
+  target_compile_definitions(HostHeaderSnapshotTest PRIVATE SHOOTS_HOST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+  shoots_host_apply_warnings(HostHeaderSnapshotTest)
+
+  add_test(NAME HostHeaderSnapshotTest COMMAND HostHeaderSnapshotTest)
 endif()
