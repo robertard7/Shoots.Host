@@ -32,6 +32,7 @@ struct AppConfig {
     std::size_t request_timeout_ms = 1000;
     std::string api_key;
     std::string cors_origin;
+    std::string metrics_format = "json";
     std::size_t max_inflight = 64;
     std::size_t shutdown_drain_ms = 2000;
 };

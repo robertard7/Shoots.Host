@@ -1,0 +1,10 @@
+# TYPE requests_total counter
+requests_total 0
+# TYPE requests_inflight gauge
+requests_inflight 0
+# TYPE errors_total counter
+errors_total 0
+# TYPE ready_transitions_total counter
+ready_transitions_total 0
+# TYPE rejected_inflight_total counter
+rejected_inflight_total 0

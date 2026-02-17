@@ -11,6 +11,7 @@
 #include <cctype>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -347,13 +348,32 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
             return;
         }
         const HostMetrics metrics = app.Metrics();
+        app.MarkReadyState(app.Provider().IsReady());
+        if (app.Config().metrics_format == "prometheus") {
+            response.status = 200;
+            response.set_header("Content-Type", "text/plain; version=0.0.4");
+            response.set_header("X-Request-Id", FormatRequestId(app.NextRequestSequence()));
+            ApplyCors(app, response);
+            std::ostringstream out;
+            out << "# TYPE requests_total counter\n";
+            out << "requests_total " << metrics.requests_total << "\n";
+            out << "# TYPE requests_inflight gauge\n";
+            out << "requests_inflight " << metrics.requests_inflight << "\n";
+            out << "# TYPE errors_total counter\n";
+            out << "errors_total " << metrics.errors_total << "\n";
+            out << "# TYPE ready_transitions_total counter\n";
+            out << "ready_transitions_total " << metrics.ready_transitions_total << "\n";
+            out << "# TYPE rejected_inflight_total counter\n";
+            out << "rejected_inflight_total " << metrics.rejected_inflight_total << "\n";
+            response.body = out.str();
+            return;
+        }
         JsonValue result = JsonValue::Object();
         result.Set("errors_total", static_cast<long long>(metrics.errors_total));
         result.Set("ready_transitions_total", static_cast<long long>(metrics.ready_transitions_total));
         result.Set("rejected_inflight_total", static_cast<long long>(metrics.rejected_inflight_total));
         result.Set("requests_inflight", static_cast<long long>(metrics.requests_inflight));
         result.Set("requests_total", static_cast<long long>(metrics.requests_total));
-        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(app, response, 200, Ok(std::move(result)));
     });
 

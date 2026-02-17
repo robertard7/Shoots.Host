@@ -7,6 +7,7 @@ Recommended defaults:
 - `SHOOTS_HOST_LOG_LEVEL=info`
 - `SHOOTS_HOST_LOG_FORMAT=text`
 - `SHOOTS_HOST_MAX_INFLIGHT=64`
+- `SHOOTS_HOST_METRICS_FORMAT=json`
 
 ## Start
 ```bash

@@ -17,6 +17,7 @@ export SHOOTS_HOST_API_KEY="${SHOOTS_HOST_API_KEY:-}"
 export SHOOTS_HOST_CORS_ORIGIN="${SHOOTS_HOST_CORS_ORIGIN:-}"
 export SHOOTS_HOST_MAX_INFLIGHT="${SHOOTS_HOST_MAX_INFLIGHT:-64}"
 export SHOOTS_HOST_SHUTDOWN_DRAIN_MS="${SHOOTS_HOST_SHUTDOWN_DRAIN_MS:-2000}"
+export SHOOTS_HOST_METRICS_FORMAT="${SHOOTS_HOST_METRICS_FORMAT:-json}"
 
 echo "Starting ShootsHost"
 echo "  bind=$SHOOTS_HOST_BIND"
@@ -29,6 +30,7 @@ echo "  api_key_enabled=$([ -n "$SHOOTS_HOST_API_KEY" ] && echo true || echo fal
 echo "  cors_origin=$SHOOTS_HOST_CORS_ORIGIN"
 echo "  max_inflight=$SHOOTS_HOST_MAX_INFLIGHT"
 echo "  shutdown_drain_ms=$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"
+echo "  metrics_format=$SHOOTS_HOST_METRICS_FORMAT"
 echo ""
 echo "Endpoints:"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/"
@@ -54,4 +56,5 @@ exec "$a" \
   --api-key "$SHOOTS_HOST_API_KEY" \
   --cors-origin "$SHOOTS_HOST_CORS_ORIGIN" \
   --max-inflight "$SHOOTS_HOST_MAX_INFLIGHT" \
-  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"
+  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS" \
+  --metrics-format "$SHOOTS_HOST_METRICS_FORMAT"

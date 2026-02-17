@@ -53,6 +53,10 @@ bool IsValidLogFormat(const std::string& value) {
     return value == "text" || value == "json";
 }
 
+bool IsValidMetricsFormat(const std::string& value) {
+    return value == "json" || value == "prometheus";
+}
+
 shoots::host::JsonValue BuildConfigJson(const shoots::host::AppConfig& config,
                                         const std::string& bind,
                                         int port,
@@ -66,6 +70,7 @@ shoots::host::JsonValue BuildConfigJson(const shoots::host::AppConfig& config,
     out.Set("log_level", log_level);
     out.Set("max_body_bytes", static_cast<long long>(config.max_body_bytes));
     out.Set("max_inflight", static_cast<long long>(config.max_inflight));
+    out.Set("metrics_format", config.metrics_format);
     out.Set("port", port);
     out.Set("provider_endpoint", config.provider_endpoint);
     out.Set("req_timeout_ms", static_cast<long long>(config.request_timeout_ms));
@@ -89,6 +94,7 @@ int main(int argc, char** argv) {
     config.request_timeout_ms = EnvSize("SHOOTS_HOST_REQ_TIMEOUT_MS", 1000);
     config.api_key = EnvString("SHOOTS_HOST_API_KEY", "");
     config.cors_origin = EnvString("SHOOTS_HOST_CORS_ORIGIN", "");
+    config.metrics_format = EnvString("SHOOTS_HOST_METRICS_FORMAT", "json");
     config.max_inflight = EnvSize("SHOOTS_HOST_MAX_INFLIGHT", 64);
     config.shutdown_drain_ms = EnvSize("SHOOTS_HOST_SHUTDOWN_DRAIN_MS", 2000);
 
@@ -142,6 +148,10 @@ int main(int argc, char** argv) {
             config.max_inflight = static_cast<std::size_t>(std::strtoull(argv[++i], nullptr, 10));
             continue;
         }
+        if (arg == "--metrics-format" && i + 1 < argc) {
+            config.metrics_format = argv[++i];
+            continue;
+        }
         if (arg == "--shutdown-drain-ms" && i + 1 < argc) {
             config.shutdown_drain_ms = static_cast<std::size_t>(std::strtoull(argv[++i], nullptr, 10));
             continue;
@@ -156,6 +166,10 @@ int main(int argc, char** argv) {
     }
     if (!IsValidLogFormat(log_format)) {
         std::cerr << "Invalid log format: " << log_format << "\n";
+        return 2;
+    }
+    if (!IsValidMetricsFormat(config.metrics_format)) {
+        std::cerr << "Invalid metrics format: " << config.metrics_format << "\n";
         return 2;
     }
 

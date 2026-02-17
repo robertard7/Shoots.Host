@@ -23,7 +23,8 @@ int main() {
         {"/tests/golden/error-payload-too-large.json", "{\"error\":{\"code\":\"payload_too_large\",\"details\":{\"field\":\"body\",\"reason\":\"too_large\"},\"message\":\"request body too large\"},\"ok\":false}\n"},
         {"/tests/golden/error-too-many-requests.json", "{\"error\":{\"code\":\"too_many_requests\",\"details\":{\"field\":\"requests\",\"reason\":\"max_inflight\"},\"message\":\"too many in-flight requests\"},\"ok\":false}\n"},
         {"/tests/golden/error-unauthorized.json", "{\"error\":{\"code\":\"unauthorized\",\"details\":{\"field\":\"X-Api-Key\",\"reason\":\"missing_or_invalid\"},\"message\":\"api key is required\"},\"ok\":false}\n"},
-        {"/tests/golden/print-config.json", "{\"api_key_enabled\":false,\"bind\":\"127.0.0.1\",\"cors_origin\":\"\",\"log_format\":\"text\",\"log_level\":\"info\",\"max_body_bytes\":1048576,\"max_inflight\":64,\"port\":8787,\"provider_endpoint\":\"in-memory://provider-bridge\",\"req_timeout_ms\":1000,\"shutdown_drain_ms\":2000,\"version\":\"0.1.0\"}\n"},
+        {"/tests/golden/metrics-prometheus.txt", "# TYPE requests_total counter\nrequests_total 0\n# TYPE requests_inflight gauge\nrequests_inflight 0\n# TYPE errors_total counter\nerrors_total 0\n# TYPE ready_transitions_total counter\nready_transitions_total 0\n# TYPE rejected_inflight_total counter\nrejected_inflight_total 0\n"},
+        {"/tests/golden/print-config.json", "{\"api_key_enabled\":false,\"bind\":\"127.0.0.1\",\"cors_origin\":\"\",\"log_format\":\"text\",\"log_level\":\"info\",\"max_body_bytes\":1048576,\"max_inflight\":64,\"metrics_format\":\"json\",\"port\":8787,\"provider_endpoint\":\"in-memory://provider-bridge\",\"req_timeout_ms\":1000,\"shutdown_drain_ms\":2000,\"version\":\"0.1.0\"}\n"},
     };
 
     for (const auto& snapshot : snapshots) {

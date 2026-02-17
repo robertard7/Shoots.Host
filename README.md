@@ -38,6 +38,7 @@ export SHOOTS_HOST_API_KEY=
 export SHOOTS_HOST_CORS_ORIGIN=
 export SHOOTS_HOST_MAX_INFLIGHT=64
 export SHOOTS_HOST_SHUTDOWN_DRAIN_MS=2000
+export SHOOTS_HOST_METRICS_FORMAT=json
 ./build/shoots-host \
   --port "$SHOOTS_HOST_PORT" \
   --bind "$SHOOTS_HOST_BIND" \
@@ -48,7 +49,8 @@ export SHOOTS_HOST_SHUTDOWN_DRAIN_MS=2000
   --api-key "$SHOOTS_HOST_API_KEY" \
   --cors-origin "$SHOOTS_HOST_CORS_ORIGIN" \
   --max-inflight "$SHOOTS_HOST_MAX_INFLIGHT" \
-  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"
+  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS" \
+  --metrics-format "$SHOOTS_HOST_METRICS_FORMAT"
 ```
 
 ## Config validation
@@ -62,6 +64,7 @@ export SHOOTS_HOST_SHUTDOWN_DRAIN_MS=2000
 curl -s http://127.0.0.1:8787/livez
 curl -s http://127.0.0.1:8787/healthz
 curl -s http://127.0.0.1:8787/readyz
+curl -s http://127.0.0.1:8787/metrics
 ```
 
 ## Helper scripts
