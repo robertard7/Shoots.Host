@@ -78,3 +78,4 @@ curl -s http://127.0.0.1:8787/readyz
 - `docs/INSTALL.md`
 - `CHANGELOG.md`
 - `SECURITY.md`
+- `docs/OPERATIONS.md`
