@@ -34,3 +34,7 @@ WantedBy=multi-user.target
 3. Install new build to prefix (`cmake --install ... --prefix /opt/shoots`)
 4. Start service
 5. Verify `/livez`, `/healthz`, `/readyz`
+
+
+## TLS
+Terminate TLS at a reverse proxy; keep Shoots.Host on loopback. See `docs/TLS.md`.

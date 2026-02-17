@@ -79,3 +79,4 @@ curl -s http://127.0.0.1:8787/readyz
 - `CHANGELOG.md`
 - `SECURITY.md`
 - `docs/OPERATIONS.md`
+- `docs/TLS.md`

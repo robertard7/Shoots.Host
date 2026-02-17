@@ -10,3 +10,6 @@ If you discover a security issue in Shoots.Host, please report it privately to t
 - issue description
 - reproduction steps
 - impact assessment
+
+
+For deployment guidance, see `docs/TLS.md`.
