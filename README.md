@@ -87,3 +87,4 @@ curl -s http://127.0.0.1:8787/metrics
 - `SECURITY.md`
 - `docs/OPERATIONS.md`
 - `docs/TLS.md`
+- `docs/HOMEBREW.md`
