@@ -72,6 +72,7 @@ curl -s http://127.0.0.1:8787/metrics
 ./scripts/ci_local.sh
 ./scripts/run_host.sh
 ./scripts/load_test_livez.sh
+./scripts/os_build_smoke.sh
 ./scripts/install_host.sh
 ./scripts/package_host.sh
 ./scripts/release_check.sh

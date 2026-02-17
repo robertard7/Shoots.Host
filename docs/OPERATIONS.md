@@ -80,3 +80,16 @@ Recommended alert posture:
 - page on `/readyz` failure ratio over a short window (for example >5% over 5m)
 - ticket/non-paging alert for intermittent `/livez` blips unless prolonged
 - include `/healthz` payload in runbook triage to confirm deployed version/build
+
+
+## OS build smoke
+Run a deterministic end-to-end host smoke for OS-build style flow:
+
+```bash
+./scripts/os_build_smoke.sh
+```
+
+Checks include:
+- `/livez` and `/healthz` reachability
+- `/status` envelope readiness
+- one `POST /v1/build` submission returning `jobId` and `requestId`
