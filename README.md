@@ -13,6 +13,8 @@ Shoots.Host is a transport-neutral HTTP host for `Shoots.Provider`.
 
 - `GET /healthz`
 - `GET /readyz`
+- `GET /metrics`
+- `GET /status`
 - `GET /v1/caps`
 - `GET /v1/models`
 - `GET /v1/templates`
@@ -48,7 +50,9 @@ Run (env + flags):
 export SHOOTS_HOST_PORT=8787
 export SHOOTS_HOST_BIND=127.0.0.1
 export SHOOTS_HOST_LOG_LEVEL=info
-./build/ShootsHost --port "$SHOOTS_HOST_PORT" --bind "$SHOOTS_HOST_BIND" --log-level "$SHOOTS_HOST_LOG_LEVEL"
+export SHOOTS_HOST_MAX_BODY_BYTES=1048576
+export SHOOTS_HOST_REQ_TIMEOUT_MS=1000
+./build/ShootsHost --port "$SHOOTS_HOST_PORT" --bind "$SHOOTS_HOST_BIND" --log-level "$SHOOTS_HOST_LOG_LEVEL" --max-body-bytes "$SHOOTS_HOST_MAX_BODY_BYTES" --req-timeout-ms "$SHOOTS_HOST_REQ_TIMEOUT_MS"
 ```
 
 Example curl checks:
@@ -56,6 +60,8 @@ Example curl checks:
 ```bash
 curl -s http://127.0.0.1:8787/healthz
 curl -s http://127.0.0.1:8787/readyz
+curl -s http://127.0.0.1:8787/metrics
+curl -s http://127.0.0.1:8787/status
 ```
 
 Troubleshooting:
@@ -97,12 +103,17 @@ For maintenance rebuilds:
 ./codex/maintenance.sh
 ```
 
+For local deterministic CI parity checks:
+
+```bash
+./scripts/ci_local.sh
+```
+
 Scripts are non-interactive (`GIT_TERMINAL_PROMPT=0`, `GIT_ASKPASS=/bin/true`).
 
 ## Third-party dependency strategy
 
-- `cpp-httplib` is vendored as `external/httplib/httplib.h`.
-- Codex setup does not require submodule checkout for HTTP hosting.
+- `httplib` is vendored as `external/httplib/httplib.h`.
 
 ## Contract
 

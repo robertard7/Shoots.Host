@@ -35,6 +35,8 @@ target_compile_features(ShootsHost PRIVATE cxx_std_20)
 shoots_host_apply_warnings(ShootsHost)
 
 install(TARGETS ShootsHost RUNTIME DESTINATION bin)
+install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/ShootsHost)
+install(PROGRAMS scripts/run_host.sh DESTINATION bin)
 
 if (SHOOTS_HOST_BUILD_TESTS)
   enable_testing()

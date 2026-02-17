@@ -10,6 +10,13 @@
 
 namespace shoots::host {
 
+struct HostMetrics {
+    std::uint64_t requests_total = 0;
+    std::uint64_t requests_inflight = 0;
+    std::uint64_t errors_total = 0;
+    std::uint64_t ready_transitions_total = 0;
+};
+
 struct AppConfig {
     std::size_t max_jobs = 256;
     std::size_t max_body_bytes = 1024 * 1024;
@@ -21,6 +28,7 @@ struct AppConfig {
     std::string git_revision = "unknown";
     std::string build_time = "unknown";
     std::string provider_endpoint = "in-memory://provider-bridge";
+    std::size_t request_timeout_ms = 1000;
 };
 
 class AppState final {
@@ -32,6 +40,10 @@ public:
     [[nodiscard]] ProviderBridge& Provider();
     [[nodiscard]] std::uint64_t NextRequestSequence();
     [[nodiscard]] long long UptimeMs() const;
+    void OnRequestStart();
+    void OnRequestEnd(bool is_error);
+    void MarkReadyState(bool ready);
+    [[nodiscard]] HostMetrics Metrics() const;
 
 private:
     AppConfig config_;
@@ -39,6 +51,8 @@ private:
     ProviderBridge provider_;
     std::uint64_t next_request_sequence_ = 1;
     std::chrono::steady_clock::time_point start_time_;
+    HostMetrics metrics_;
+    bool last_ready_state_ = false;
 };
 
 } // namespace shoots::host

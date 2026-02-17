@@ -18,10 +18,33 @@ namespace shoots::host {
 
 namespace {
 
+class RequestScope final {
+public:
+    explicit RequestScope(AppState& app) : app_(app) { app_.OnRequestStart(); }
+    ~RequestScope() { app_.OnRequestEnd(is_error_); }
+    void MarkError() { is_error_ = true; }
+
+private:
+    AppState& app_;
+    bool is_error_ = false;
+};
+
 void WriteJson(httplib::Response& response, int status_code, const JsonValue& value) {
     response.status = status_code;
     response.set_header("Content-Type", "application/json");
     response.body = value.Serialize();
+}
+
+void WriteError(AppState& app,
+                RequestScope& scope,
+                httplib::Response& response,
+                int status_code,
+                const std::string& code,
+                const std::string& message,
+                const ErrorDetails& details) {
+    scope.MarkError();
+    app.MarkReadyState(app.Provider().IsReady());
+    WriteJson(response, status_code, MakeErrorEnvelope(code, message, details));
 }
 
 std::string FormatRequestId(std::uint64_t sequence) {
@@ -166,32 +189,33 @@ void HandleSubmit(AppState& app,
                   const std::set<std::string>& optional_fields,
                   const httplib::Request& request,
                   httplib::Response& response) {
+    RequestScope scope(app);
     if (!ValidateEnvelopeShape(request.body)) {
-        WriteJson(response, 400, MakeErrorEnvelope("bad_request", "request body must be a JSON object", {"body", "invalid_shape"}));
+        WriteError(app, scope, response, 400, "bad_request", "request body must be a JSON object", {"body", "invalid_shape"});
         return;
     }
     if (request.body.size() > app.Config().max_body_bytes) {
-        WriteJson(response, 400, MakeErrorEnvelope("bad_request", "request body too large", {"body", "too_large"}));
+        WriteError(app, scope, response, 413, "payload_too_large", "request body too large", {"body", "too_large"});
         return;
     }
 
     const std::set<std::string> keys = ExtractTopLevelKeys(request.body);
     for (const std::string& field : required_fields) {
         if (!HasKey(keys, field)) {
-            WriteJson(response, 400, MakeErrorEnvelope("bad_request", "missing required field", {field, "required"}));
+            WriteError(app, scope, response, 400, "bad_request", "missing required field", {field, "required"});
             return;
         }
     }
     for (const std::string& key : keys) {
         if (!HasKey(required_fields, key) && !HasKey(optional_fields, key)) {
-            WriteJson(response, 400, MakeErrorEnvelope("bad_request", "unknown field", {key, "unknown"}));
+            WriteError(app, scope, response, 400, "bad_request", "unknown field", {key, "unknown"});
             return;
         }
     }
 
     const std::string model_id = ExtractStringValue(request.body, "modelId").value_or(app.Config().default_model_id);
     if (model_id.size() > app.Config().max_field_bytes) {
-        WriteJson(response, 400, MakeErrorEnvelope("bad_request", "modelId too large", {"modelId", "too_large"}));
+        WriteError(app, scope, response, 400, "bad_request", "modelId too large", {"modelId", "too_large"});
         return;
     }
 
@@ -213,25 +237,41 @@ void HandleSubmit(AppState& app,
     JsonValue result = JsonValue::Object();
     result.Set("jobId", job.job_id);
     result.Set("requestId", FormatRequestId(request_id));
+    app.MarkReadyState(app.Provider().IsReady());
     WriteJson(response, 200, Ok(std::move(result)));
 }
 
 } // namespace
 
 void RegisterRoutes(httplib::Server& server, AppState& app) {
+    server.Get("/", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
+        JsonValue result = JsonValue::Object();
+        result.Set("healthz", "/healthz");
+        result.Set("readyz", "/readyz");
+        result.Set("service", app.Config().service_name);
+        app.MarkReadyState(app.Provider().IsReady());
+        WriteJson(response, 200, Ok(std::move(result)));
+    });
+
     server.Get("/healthz", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
         JsonValue result = JsonValue::Object();
         result.Set("build_time", app.Config().build_time);
         result.Set("git", app.Config().git_revision);
         result.Set("service", app.Config().service_name);
         result.Set("uptime_ms", app.UptimeMs());
         result.Set("version", app.Config().service_version);
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Get("/readyz", [&app](const httplib::Request&, httplib::Response& response) {
-        if (!app.Provider().IsReady()) {
-            WriteJson(response, 503, MakeErrorEnvelope("not_ready", "provider bridge is not ready", {"provider", "not_ready"}));
+        RequestScope scope(app);
+        const bool is_ready = app.Provider().IsReady();
+        app.MarkReadyState(is_ready);
+        if (!is_ready) {
+            WriteError(app, scope, response, 503, "not_ready", "provider bridge is not ready", {"provider", "not_ready"});
             return;
         }
         JsonValue result = JsonValue::Object();
@@ -241,17 +281,46 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
+    server.Get("/metrics", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
+        const HostMetrics metrics = app.Metrics();
+        JsonValue result = JsonValue::Object();
+        result.Set("errors_total", static_cast<long long>(metrics.errors_total));
+        result.Set("ready_transitions_total", static_cast<long long>(metrics.ready_transitions_total));
+        result.Set("requests_inflight", static_cast<long long>(metrics.requests_inflight));
+        result.Set("requests_total", static_cast<long long>(metrics.requests_total));
+        app.MarkReadyState(app.Provider().IsReady());
+        WriteJson(response, 200, Ok(std::move(result)));
+    });
+
+    server.Get("/status", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
+        const bool is_ready = app.Provider().IsReady();
+        app.MarkReadyState(is_ready);
+        JsonValue result = JsonValue::Object();
+        result.Set("last_error_code", "");
+        result.Set("last_error_message", "");
+        result.Set("provider_endpoint", app.Provider().Endpoint());
+        result.Set("provider_version", app.Provider().BuildVersion());
+        result.Set("ready", is_ready);
+        result.Set("request_sequence", FormatRequestId(app.NextRequestSequence()));
+        WriteJson(response, 200, Ok(std::move(result)));
+    });
+
     server.Get("/v1/caps", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
         const ProviderCapabilities caps = app.Provider().GetCapabilities();
         JsonValue result = JsonValue::Object();
         result.Set("maxPayloadBytes", static_cast<long long>(caps.max_payload_bytes));
         result.Set("supportsBuild", caps.supports_build);
         result.Set("supportsChat", caps.supports_chat);
         result.Set("supportsTool", caps.supports_tool);
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Get("/v1/models", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
         JsonValue items = JsonValue::Array();
         for (const ProviderModelMeta& model : app.Provider().ListModelsMeta()) {
             JsonValue row = JsonValue::Object();
@@ -262,10 +331,12 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
 
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(items));
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Get("/v1/templates", [&app](const httplib::Request&, httplib::Response& response) {
+        RequestScope scope(app);
         JsonValue items = JsonValue::Array();
         for (const ProviderTemplateMeta& templ : app.Provider().ListTemplatesMeta()) {
             JsonValue row = JsonValue::Object();
@@ -276,16 +347,16 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
 
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(items));
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Get("/v1/jobs", [&app](const httplib::Request& request, httplib::Response& response) {
+        RequestScope scope(app);
         std::size_t limit = 20;
-        if (request.has_param("limit")) {
-            if (!ParseNumericParam(request, "limit", limit)) {
-                WriteJson(response, 400, MakeErrorEnvelope("bad_request", "limit must be numeric", {"limit", "invalid"}));
-                return;
-            }
+        if (!ParseNumericParam(request, "limit", limit)) {
+            WriteError(app, scope, response, 400, "bad_request", "limit must be numeric", {"limit", "invalid"});
+            return;
         }
 
         JsonValue jobs = JsonValue::Array();
@@ -295,6 +366,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
 
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(jobs));
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
@@ -311,12 +383,13 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
     });
 
     server.Get(R"(/v1/jobs/([0-9]+))", [&app](const httplib::Request& request, httplib::Response& response) {
+        RequestScope scope(app);
         const std::string job_id = request.matches[1].str();
         app.Provider().Poll();
 
         const std::optional<JobRecord> job = app.Jobs().Get(job_id);
         if (!job.has_value()) {
-            WriteJson(response, 404, MakeErrorEnvelope("not_found", "job not found", {"jobId", "unknown"}));
+            WriteError(app, scope, response, 404, "not_found", "job not found", {"jobId", "unknown"});
             return;
         }
 
@@ -325,21 +398,26 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
 
         JsonValue result = JsonValue::Object();
         result.Set("job", JobToJson(*updated));
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Get(R"(/v1/jobs/([0-9]+)/wait)", [&app](const httplib::Request& request, httplib::Response& response) {
+        RequestScope scope(app);
         const std::string job_id = request.matches[1].str();
         const std::optional<JobRecord> job = app.Jobs().Get(job_id);
         if (!job.has_value()) {
-            WriteJson(response, 404, MakeErrorEnvelope("not_found", "job not found", {"jobId", "unknown"}));
+            WriteError(app, scope, response, 404, "not_found", "job not found", {"jobId", "unknown"});
             return;
         }
 
-        std::size_t timeout_ms = 0;
+        std::size_t timeout_ms = app.Config().request_timeout_ms;
         if (!ParseNumericParam(request, "timeout_ms", timeout_ms)) {
-            WriteJson(response, 400, MakeErrorEnvelope("bad_request", "timeout_ms must be numeric", {"timeout_ms", "invalid"}));
+            WriteError(app, scope, response, 400, "bad_request", "timeout_ms must be numeric", {"timeout_ms", "invalid"});
             return;
+        }
+        if (timeout_ms > app.Config().request_timeout_ms) {
+            timeout_ms = app.Config().request_timeout_ms;
         }
 
         std::size_t elapsed = 0;
@@ -351,6 +429,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
             if (current.has_value() && (current->status == JobStatus::kComplete || current->status == JobStatus::kFailed)) {
                 JsonValue result = JsonValue::Object();
                 result.Set("job", JobToJson(*current));
+                app.MarkReadyState(app.Provider().IsReady());
                 WriteJson(response, 200, Ok(std::move(result)));
                 return;
             }
@@ -362,33 +441,36 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         const std::optional<JobRecord> current = app.Jobs().Get(job_id);
         JsonValue result = JsonValue::Object();
         result.Set("job", JobToJson(*current));
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 
     server.Post(R"(/v1/jobs/([0-9]+)/take)", [&app](const httplib::Request& request, httplib::Response& response) {
+        RequestScope scope(app);
         const std::string job_id = request.matches[1].str();
         const std::optional<JobRecord> job = app.Jobs().Get(job_id);
         if (!job.has_value()) {
-            WriteJson(response, 404, MakeErrorEnvelope("not_found", "job not found", {"jobId", "unknown"}));
+            WriteError(app, scope, response, 404, "not_found", "job not found", {"jobId", "unknown"});
             return;
         }
 
         ApplyProviderResult(app, job_id);
         const std::optional<JobRecord> refreshed = app.Jobs().Get(job_id);
         if (refreshed.has_value() && refreshed->result_taken) {
-            WriteJson(response, 409, MakeErrorEnvelope("conflict", "result already taken", {"jobId", "already_taken"}));
+            WriteError(app, scope, response, 409, "conflict", "result already taken", {"jobId", "already_taken"});
             return;
         }
 
         const std::optional<JobRecord> taken = app.Jobs().TakeResult(job_id);
         if (!taken.has_value()) {
-            WriteJson(response, 409, MakeErrorEnvelope("conflict", "result not ready", {"jobId", "not_ready"}));
+            WriteError(app, scope, response, 409, "conflict", "result not ready", {"jobId", "not_ready"});
             return;
         }
 
         JsonValue result = JsonValue::Object();
         result.Set("job", JobToJson(*taken));
         result.Set("result", taken->result);
+        app.MarkReadyState(app.Provider().IsReady());
         WriteJson(response, 200, Ok(std::move(result)));
     });
 }
