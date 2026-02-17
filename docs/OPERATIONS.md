@@ -15,6 +15,13 @@ Recommended defaults:
 ```
 
 ## systemd example
+Generate a unit matching current env/defaults:
+
+```bash
+./scripts/gen_systemd_unit.sh > shoots-host.service
+```
+
+Example output:
 ```ini
 [Unit]
 Description=Shoots Host
