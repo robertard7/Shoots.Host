@@ -27,3 +27,14 @@ Layout:
 ExecStart=/opt/shoots/bin/shoots-host --bind 127.0.0.1 --port 8787
 Restart=on-failure
 ```
+
+
+## Reproducible package tarball
+```bash
+./scripts/package_host.sh
+```
+
+Notes:
+- Tarball metadata is normalized (sorted paths, fixed owner/group, deterministic mtimes).
+- Gzip output uses `-n` to strip timestamp/name from the gzip header.
+- `SOURCE_DATE_EPOCH` can be set to override the default commit timestamp seed.
