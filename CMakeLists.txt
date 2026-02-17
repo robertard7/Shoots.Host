@@ -94,4 +94,27 @@ if (SHOOTS_HOST_BUILD_TESTS)
   shoots_host_apply_warnings(HostHeaderSnapshotTest)
 
   add_test(NAME HostHeaderSnapshotTest COMMAND HostHeaderSnapshotTest)
+
+
+  add_executable(HostMetricsContentTypeTest
+    tests/contract/host_metrics_content_type_test.cpp
+    src/http/error_envelopes.cpp
+    src/jobs/job_store.cpp
+    src/provider_bridge/provider_bridge.cpp
+    src/routes/routes.cpp
+    src/server/app_state.cpp
+    src/server/http_server.cpp
+    src/server/json_writer.cpp
+    src/server/request_id.cpp
+  )
+  target_include_directories(HostMetricsContentTypeTest PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/httplib"
+  )
+  target_link_libraries(HostMetricsContentTypeTest PRIVATE Shoots::ShootsProvider)
+  target_compile_features(HostMetricsContentTypeTest PRIVATE cxx_std_20)
+  shoots_host_apply_warnings(HostMetricsContentTypeTest)
+
+  add_test(NAME HostMetricsContentTypeTest COMMAND HostMetricsContentTypeTest)
 endif()
