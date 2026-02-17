@@ -13,6 +13,13 @@ jobs:
         compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v4
+      - name: No submodules guard
+        run: |
+          test ! -f .gitmodules
+          if git submodule status --recursive | grep -q .; then
+            echo "Submodules detected" >&2
+            exit 1
+          fi
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y ninja-build cmake build-essential curl
       - name: Clone provider
@@ -33,6 +40,22 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Legacy path guard
         run: ./scripts/check_legacy_paths.sh
+      - name: Snapshot guard
+        run: |
+          if [ -n "${SHOOTS_UPDATE_SNAPSHOTS:-}" ]; then
+            echo "SHOOTS_UPDATE_SNAPSHOTS must not be set in CI" >&2
+            exit 1
+          fi
+      - name: Smoke host endpoints
+        run: |
+          ./build/shoots-host --bind 127.0.0.1 --port 18787 --log-level info --log-format text &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          sleep 1
+          curl -fsS http://127.0.0.1:18787/livez
+          curl -fsS http://127.0.0.1:18787/healthz
+          kill -TERM $PID || true
+          wait $PID || true
       - name: Build package
         run: SHOOTS_PREFIX=${{ github.workspace }}/_inst/shoots ./scripts/package_host.sh
       - name: Upload package artifact

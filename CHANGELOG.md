@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.1.0
+
 ## Added
 - `--print-config` and `--dry-run` runtime controls.
 - `/livez`, `/metrics`, `/status` deterministic operational endpoints.
@@ -15,3 +17,11 @@
 ## Fixed
 - Legacy path guard added to prevent regressions.
 - In-flight request limit returns deterministic `429` envelope.
+
+
+## Commits
+- 3b4cecd
+- 8d203f5
+- cecab0e
+- 5d8c672
+- 7b5e54f

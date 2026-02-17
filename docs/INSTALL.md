@@ -13,10 +13,17 @@ cmake --install build --prefix /opt/shoots
 
 Layout:
 - `/opt/shoots/bin/shoots-host`
-- `/opt/shoots/share/shoots-host/THIRD_PARTY_NOTICES.md`
+- `/opt/shoots/share/shoots-host/THIRD_PARTY_NOTICES.txt`
 - `/opt/shoots/share/shoots-host/run_host.sh`
 
 ## Run
 ```bash
 /opt/shoots/bin/shoots-host --bind 127.0.0.1 --port 8787
+```
+
+## systemd snippet (optional)
+```ini
+[Service]
+ExecStart=/opt/shoots/bin/shoots-host --bind 127.0.0.1 --port 8787
+Restart=on-failure
 ```
