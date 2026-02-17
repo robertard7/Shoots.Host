@@ -50,8 +50,10 @@ shoots::host::JsonValue BuildConfigJson(const shoots::host::AppConfig& config,
     out.Set("log_level", log_level);
     out.Set("max_body_bytes", static_cast<long long>(config.max_body_bytes));
     out.Set("port", port);
+    out.Set("max_inflight", static_cast<long long>(config.max_inflight));
     out.Set("provider_endpoint", config.provider_endpoint);
     out.Set("req_timeout_ms", static_cast<long long>(config.request_timeout_ms));
+    out.Set("shutdown_drain_ms", static_cast<long long>(config.shutdown_drain_ms));
     return out;
 }
 
@@ -69,6 +71,8 @@ int main(int argc, char** argv) {
     config.request_timeout_ms = EnvSize("SHOOTS_HOST_REQ_TIMEOUT_MS", 1000);
     config.api_key = EnvString("SHOOTS_HOST_API_KEY", "");
     config.cors_origin = EnvString("SHOOTS_HOST_CORS_ORIGIN", "");
+    config.max_inflight = EnvSize("SHOOTS_HOST_MAX_INFLIGHT", 64);
+    config.shutdown_drain_ms = EnvSize("SHOOTS_HOST_SHUTDOWN_DRAIN_MS", 2000);
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -110,6 +114,14 @@ int main(int argc, char** argv) {
         }
         if (arg == "--cors-origin" && i + 1 < argc) {
             config.cors_origin = argv[++i];
+            continue;
+        }
+        if (arg == "--max-inflight" && i + 1 < argc) {
+            config.max_inflight = static_cast<std::size_t>(std::strtoull(argv[++i], nullptr, 10));
+            continue;
+        }
+        if (arg == "--shutdown-drain-ms" && i + 1 < argc) {
+            config.shutdown_drain_ms = static_cast<std::size_t>(std::strtoull(argv[++i], nullptr, 10));
             continue;
         }
         std::cerr << "Unknown argument: " << arg << "\n";

@@ -28,13 +28,18 @@ long long AppState::UptimeMs() const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time_).count();
 }
 
-void AppState::OnRequestStart() {
+bool AppState::OnRequestStart() {
+    if (metrics_.requests_inflight >= config_.max_inflight) {
+        ++metrics_.rejected_inflight_total;
+        return false;
+    }
     ++metrics_.requests_total;
     ++metrics_.requests_inflight;
+    return true;
 }
 
-void AppState::OnRequestEnd(bool is_error) {
-    if (metrics_.requests_inflight > 0) {
+void AppState::OnRequestEnd(bool is_error, bool was_accepted) {
+    if (was_accepted && metrics_.requests_inflight > 0) {
         --metrics_.requests_inflight;
     }
     if (is_error) {

@@ -14,6 +14,8 @@ export SHOOTS_HOST_MAX_BODY_BYTES="${SHOOTS_HOST_MAX_BODY_BYTES:-1048576}"
 export SHOOTS_HOST_REQ_TIMEOUT_MS="${SHOOTS_HOST_REQ_TIMEOUT_MS:-1000}"
 export SHOOTS_HOST_API_KEY="${SHOOTS_HOST_API_KEY:-}"
 export SHOOTS_HOST_CORS_ORIGIN="${SHOOTS_HOST_CORS_ORIGIN:-}"
+export SHOOTS_HOST_MAX_INFLIGHT="${SHOOTS_HOST_MAX_INFLIGHT:-64}"
+export SHOOTS_HOST_SHUTDOWN_DRAIN_MS="${SHOOTS_HOST_SHUTDOWN_DRAIN_MS:-2000}"
 
 echo "Starting ShootsHost"
 echo "  bind=$SHOOTS_HOST_BIND"
@@ -23,6 +25,8 @@ echo "  max_body_bytes=$SHOOTS_HOST_MAX_BODY_BYTES"
 echo "  req_timeout_ms=$SHOOTS_HOST_REQ_TIMEOUT_MS"
 echo "  api_key_enabled=$([ -n "$SHOOTS_HOST_API_KEY" ] && echo true || echo false)"
 echo "  cors_origin=$SHOOTS_HOST_CORS_ORIGIN"
+echo "  max_inflight=$SHOOTS_HOST_MAX_INFLIGHT"
+echo "  shutdown_drain_ms=$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"
 echo ""
 echo "Endpoints:"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/"
@@ -45,4 +49,6 @@ exec "$a" \
   --max-body-bytes "$SHOOTS_HOST_MAX_BODY_BYTES" \
   --req-timeout-ms "$SHOOTS_HOST_REQ_TIMEOUT_MS" \
   --api-key "$SHOOTS_HOST_API_KEY" \
-  --cors-origin "$SHOOTS_HOST_CORS_ORIGIN"
+  --cors-origin "$SHOOTS_HOST_CORS_ORIGIN" \
+  --max-inflight "$SHOOTS_HOST_MAX_INFLIGHT" \
+  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"

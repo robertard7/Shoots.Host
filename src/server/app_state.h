@@ -15,6 +15,7 @@ struct HostMetrics {
     std::uint64_t requests_inflight = 0;
     std::uint64_t errors_total = 0;
     std::uint64_t ready_transitions_total = 0;
+    std::uint64_t rejected_inflight_total = 0;
 };
 
 struct AppConfig {
@@ -31,6 +32,8 @@ struct AppConfig {
     std::size_t request_timeout_ms = 1000;
     std::string api_key;
     std::string cors_origin;
+    std::size_t max_inflight = 64;
+    std::size_t shutdown_drain_ms = 2000;
 };
 
 class AppState final {
@@ -42,8 +45,8 @@ public:
     [[nodiscard]] ProviderBridge& Provider();
     [[nodiscard]] std::uint64_t NextRequestSequence();
     [[nodiscard]] long long UptimeMs() const;
-    void OnRequestStart();
-    void OnRequestEnd(bool is_error);
+    [[nodiscard]] bool OnRequestStart();
+    void OnRequestEnd(bool is_error, bool was_accepted);
     void MarkReadyState(bool ready);
     [[nodiscard]] HostMetrics Metrics() const;
 

@@ -12,6 +12,7 @@ Shoots.Host is a transport-neutral HTTP host for `Shoots.Provider`.
 ## API endpoints
 
 - `GET /`
+- `GET /livez`
 - `GET /healthz`
 - `GET /readyz`
 - `GET /metrics`
@@ -46,6 +47,8 @@ export SHOOTS_HOST_MAX_BODY_BYTES=1048576
 export SHOOTS_HOST_REQ_TIMEOUT_MS=1000
 export SHOOTS_HOST_API_KEY=
 export SHOOTS_HOST_CORS_ORIGIN=
+export SHOOTS_HOST_MAX_INFLIGHT=64
+export SHOOTS_HOST_SHUTDOWN_DRAIN_MS=2000
 ./build/shoots-host \
   --port "$SHOOTS_HOST_PORT" \
   --bind "$SHOOTS_HOST_BIND" \
@@ -53,7 +56,9 @@ export SHOOTS_HOST_CORS_ORIGIN=
   --max-body-bytes "$SHOOTS_HOST_MAX_BODY_BYTES" \
   --req-timeout-ms "$SHOOTS_HOST_REQ_TIMEOUT_MS" \
   --api-key "$SHOOTS_HOST_API_KEY" \
-  --cors-origin "$SHOOTS_HOST_CORS_ORIGIN"
+  --cors-origin "$SHOOTS_HOST_CORS_ORIGIN" \
+  --max-inflight "$SHOOTS_HOST_MAX_INFLIGHT" \
+  --shutdown-drain-ms "$SHOOTS_HOST_SHUTDOWN_DRAIN_MS"
 ```
 
 Print resolved config without starting:
@@ -66,6 +71,7 @@ Print resolved config without starting:
 Example curl checks:
 
 ```bash
+curl -s http://127.0.0.1:8787/livez
 curl -s http://127.0.0.1:8787/healthz
 curl -s http://127.0.0.1:8787/readyz
 ```
