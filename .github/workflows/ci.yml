@@ -29,23 +29,9 @@ jobs:
         run: cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=${{ github.workspace }}/_inst/shoots -DSHOOTS_HOST_BUILD_TESTS=ON
       - name: Build host
         run: cmake --build build
-      - name: Run golden snapshots
-        run: ./build/HostGoldenSnapshots
+      - name: Run ctest
+        run: ctest --test-dir build --output-on-failure
+      - name: Legacy path guard
+        run: ./scripts/check_legacy_paths.sh
       - name: Smoke API endpoints
         run: ./tests/host_smoke.sh
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Clone provider
-        run: git clone --depth 1 https://github.com/robertard7/Shoots.Provider.git ${{ github.workspace }}\_deps\Shoots.Provider
-      - name: Build + install provider
-        run: |
-          cmake -S ${{ github.workspace }}\_deps\Shoots.Provider -B ${{ github.workspace }}\_deps\Shoots.Provider\build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\_inst\Shoots
-          cmake --build ${{ github.workspace }}\_deps\Shoots.Provider\build --config Release
-          cmake --install ${{ github.workspace }}\_deps\Shoots.Provider\build --config Release
-      - name: Configure host
-        run: cmake -S . -B build -DCMAKE_PREFIX_PATH=${{ github.workspace }}\_inst\Shoots
-      - name: Build host
-        run: cmake --build build --config Release

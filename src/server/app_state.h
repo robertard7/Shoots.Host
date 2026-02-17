@@ -29,6 +29,8 @@ struct AppConfig {
     std::string build_time = "unknown";
     std::string provider_endpoint = "in-memory://provider-bridge";
     std::size_t request_timeout_ms = 1000;
+    std::string api_key;
+    std::string cors_origin;
 };
 
 class AppState final {

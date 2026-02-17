@@ -1,0 +1,1 @@
+{"api_key_enabled":false,"bind":"127.0.0.1","cors_origin":"","log_level":"info","max_body_bytes":1048576,"port":8787,"provider_endpoint":"in-memory://provider-bridge","req_timeout_ms":1000}

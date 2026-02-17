@@ -12,6 +12,8 @@ export SHOOTS_HOST_PORT="${SHOOTS_HOST_PORT:-8787}"
 export SHOOTS_HOST_LOG_LEVEL="${SHOOTS_HOST_LOG_LEVEL:-info}"
 export SHOOTS_HOST_MAX_BODY_BYTES="${SHOOTS_HOST_MAX_BODY_BYTES:-1048576}"
 export SHOOTS_HOST_REQ_TIMEOUT_MS="${SHOOTS_HOST_REQ_TIMEOUT_MS:-1000}"
+export SHOOTS_HOST_API_KEY="${SHOOTS_HOST_API_KEY:-}"
+export SHOOTS_HOST_CORS_ORIGIN="${SHOOTS_HOST_CORS_ORIGIN:-}"
 
 echo "Starting ShootsHost"
 echo "  bind=$SHOOTS_HOST_BIND"
@@ -19,19 +21,18 @@ echo "  port=$SHOOTS_HOST_PORT"
 echo "  log_level=$SHOOTS_HOST_LOG_LEVEL"
 echo "  max_body_bytes=$SHOOTS_HOST_MAX_BODY_BYTES"
 echo "  req_timeout_ms=$SHOOTS_HOST_REQ_TIMEOUT_MS"
+echo "  api_key_enabled=$([ -n "$SHOOTS_HOST_API_KEY" ] && echo true || echo false)"
+echo "  cors_origin=$SHOOTS_HOST_CORS_ORIGIN"
 echo ""
 echo "Endpoints:"
+echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/healthz"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/readyz"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/metrics"
 echo "  http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/status"
 echo ""
-echo "Try:"
-echo "  curl -s http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/healthz"
-echo "  curl -s http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/readyz"
-echo "  curl -s http://$SHOOTS_HOST_BIND:$SHOOTS_HOST_PORT/metrics"
 
-a="./build/ShootsHost"
+a="./build/shoots-host"
 if [ ! -x "$a" ]; then
   echo "Missing $a. Build first with scripts/build_host.sh or cmake --build build." >&2
   exit 2
@@ -42,4 +43,6 @@ exec "$a" \
   --port "$SHOOTS_HOST_PORT" \
   --log-level "$SHOOTS_HOST_LOG_LEVEL" \
   --max-body-bytes "$SHOOTS_HOST_MAX_BODY_BYTES" \
-  --req-timeout-ms "$SHOOTS_HOST_REQ_TIMEOUT_MS"
+  --req-timeout-ms "$SHOOTS_HOST_REQ_TIMEOUT_MS" \
+  --api-key "$SHOOTS_HOST_API_KEY" \
+  --cors-origin "$SHOOTS_HOST_CORS_ORIGIN"

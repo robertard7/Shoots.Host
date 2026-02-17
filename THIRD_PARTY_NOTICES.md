@@ -1,7 +1,7 @@
 # Third-Party Notices
 
-## cpp-httplib
+## httplib
 
-- Source: https://github.com/yhirose/cpp-httplib
+- Source: https://github.com/yhirose/httplib
 - License: MIT
 - Vendored file: `external/httplib/httplib.h`

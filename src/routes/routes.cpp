@@ -29,9 +29,16 @@ private:
     bool is_error_ = false;
 };
 
-void WriteJson(httplib::Response& response, int status_code, const JsonValue& value) {
+void ApplyCors(const AppState& app, httplib::Response& response) {
+    if (!app.Config().cors_origin.empty()) {
+        response.set_header("Access-Control-Allow-Origin", app.Config().cors_origin.c_str());
+    }
+}
+
+void WriteJson(const AppState& app, httplib::Response& response, int status_code, const JsonValue& value) {
     response.status = status_code;
     response.set_header("Content-Type", "application/json");
+    ApplyCors(app, response);
     response.body = value.Serialize();
 }
 
@@ -44,7 +51,25 @@ void WriteError(AppState& app,
                 const ErrorDetails& details) {
     scope.MarkError();
     app.MarkReadyState(app.Provider().IsReady());
-    WriteJson(response, status_code, MakeErrorEnvelope(code, message, details));
+    WriteJson(app, response, status_code, MakeErrorEnvelope(code, message, details));
+}
+
+bool IsAuthorized(const AppState& app, const httplib::Request& request) {
+    if (app.Config().api_key.empty()) {
+        return true;
+    }
+    if (!request.has_header("X-Api-Key")) {
+        return false;
+    }
+    return request.get_header_value("X-Api-Key") == app.Config().api_key;
+}
+
+bool RequireApiKey(AppState& app, RequestScope& scope, const httplib::Request& request, httplib::Response& response) {
+    if (IsAuthorized(app, request)) {
+        return true;
+    }
+    WriteError(app, scope, response, 401, "unauthorized", "api key is required", {"X-Api-Key", "missing_or_invalid"});
+    return false;
 }
 
 std::string FormatRequestId(std::uint64_t sequence) {
@@ -190,6 +215,9 @@ void HandleSubmit(AppState& app,
                   const httplib::Request& request,
                   httplib::Response& response) {
     RequestScope scope(app);
+    if (!RequireApiKey(app, scope, request, response)) {
+        return;
+    }
     if (!ValidateEnvelopeShape(request.body)) {
         WriteError(app, scope, response, 400, "bad_request", "request body must be a JSON object", {"body", "invalid_shape"});
         return;
@@ -238,7 +266,7 @@ void HandleSubmit(AppState& app,
     result.Set("jobId", job.job_id);
     result.Set("requestId", FormatRequestId(request_id));
     app.MarkReadyState(app.Provider().IsReady());
-    WriteJson(response, 200, Ok(std::move(result)));
+    WriteJson(app, response, 200, Ok(std::move(result)));
 }
 
 } // namespace
@@ -251,7 +279,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("readyz", "/readyz");
         result.Set("service", app.Config().service_name);
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Get("/healthz", [&app](const httplib::Request&, httplib::Response& response) {
@@ -263,7 +291,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("uptime_ms", app.UptimeMs());
         result.Set("version", app.Config().service_version);
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Get("/readyz", [&app](const httplib::Request&, httplib::Response& response) {
@@ -278,11 +306,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("endpoint", app.Provider().Endpoint());
         result.Set("provider_version", app.Provider().BuildVersion());
         result.Set("requestId", FormatRequestId(app.NextRequestSequence()));
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
-    server.Get("/metrics", [&app](const httplib::Request&, httplib::Response& response) {
+    server.Get("/metrics", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const HostMetrics metrics = app.Metrics();
         JsonValue result = JsonValue::Object();
         result.Set("errors_total", static_cast<long long>(metrics.errors_total));
@@ -290,11 +321,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("requests_inflight", static_cast<long long>(metrics.requests_inflight));
         result.Set("requests_total", static_cast<long long>(metrics.requests_total));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
-    server.Get("/status", [&app](const httplib::Request&, httplib::Response& response) {
+    server.Get("/status", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const bool is_ready = app.Provider().IsReady();
         app.MarkReadyState(is_ready);
         JsonValue result = JsonValue::Object();
@@ -304,11 +338,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("provider_version", app.Provider().BuildVersion());
         result.Set("ready", is_ready);
         result.Set("request_sequence", FormatRequestId(app.NextRequestSequence()));
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
-    server.Get("/v1/caps", [&app](const httplib::Request&, httplib::Response& response) {
+    server.Get("/v1/caps", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const ProviderCapabilities caps = app.Provider().GetCapabilities();
         JsonValue result = JsonValue::Object();
         result.Set("maxPayloadBytes", static_cast<long long>(caps.max_payload_bytes));
@@ -316,11 +353,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("supportsChat", caps.supports_chat);
         result.Set("supportsTool", caps.supports_tool);
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
-    server.Get("/v1/models", [&app](const httplib::Request&, httplib::Response& response) {
+    server.Get("/v1/models", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         JsonValue items = JsonValue::Array();
         for (const ProviderModelMeta& model : app.Provider().ListModelsMeta()) {
             JsonValue row = JsonValue::Object();
@@ -332,11 +372,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(items));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
-    server.Get("/v1/templates", [&app](const httplib::Request&, httplib::Response& response) {
+    server.Get("/v1/templates", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         JsonValue items = JsonValue::Array();
         for (const ProviderTemplateMeta& templ : app.Provider().ListTemplatesMeta()) {
             JsonValue row = JsonValue::Object();
@@ -348,11 +391,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(items));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Get("/v1/jobs", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         std::size_t limit = 20;
         if (!ParseNumericParam(request, "limit", limit)) {
             WriteError(app, scope, response, 400, "bad_request", "limit must be numeric", {"limit", "invalid"});
@@ -367,7 +413,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         JsonValue result = JsonValue::Object();
         result.Set("items", std::move(jobs));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Post("/v1/chat", [&app](const httplib::Request& request, httplib::Response& response) {
@@ -384,6 +430,9 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
 
     server.Get(R"(/v1/jobs/([0-9]+))", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const std::string job_id = request.matches[1].str();
         app.Provider().Poll();
 
@@ -399,11 +448,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         JsonValue result = JsonValue::Object();
         result.Set("job", JobToJson(*updated));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Get(R"(/v1/jobs/([0-9]+)/wait)", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const std::string job_id = request.matches[1].str();
         const std::optional<JobRecord> job = app.Jobs().Get(job_id);
         if (!job.has_value()) {
@@ -430,7 +482,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
                 JsonValue result = JsonValue::Object();
                 result.Set("job", JobToJson(*current));
                 app.MarkReadyState(app.Provider().IsReady());
-                WriteJson(response, 200, Ok(std::move(result)));
+                WriteJson(app, response, 200, Ok(std::move(result)));
                 return;
             }
 
@@ -442,11 +494,14 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         JsonValue result = JsonValue::Object();
         result.Set("job", JobToJson(*current));
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 
     server.Post(R"(/v1/jobs/([0-9]+)/take)", [&app](const httplib::Request& request, httplib::Response& response) {
         RequestScope scope(app);
+        if (!RequireApiKey(app, scope, request, response)) {
+            return;
+        }
         const std::string job_id = request.matches[1].str();
         const std::optional<JobRecord> job = app.Jobs().Get(job_id);
         if (!job.has_value()) {
@@ -471,7 +526,7 @@ void RegisterRoutes(httplib::Server& server, AppState& app) {
         result.Set("job", JobToJson(*taken));
         result.Set("result", taken->result);
         app.MarkReadyState(app.Provider().IsReady());
-        WriteJson(response, 200, Ok(std::move(result)));
+        WriteJson(app, response, 200, Ok(std::move(result)));
     });
 }
 

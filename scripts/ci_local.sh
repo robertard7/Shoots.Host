@@ -15,3 +15,5 @@ cmake --build build --config Release
 cmake -S . -B build-tests -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$PREFIX" -DSHOOTS_HOST_BUILD_TESTS=ON
 cmake --build build-tests --config Release
 ctest --test-dir build-tests --output-on-failure
+
+./scripts/check_legacy_paths.sh

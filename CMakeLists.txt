@@ -22,6 +22,7 @@ add_executable(ShootsHost
   src/server/http_server.cpp
   src/server/json_writer.cpp
 )
+set_target_properties(ShootsHost PROPERTIES OUTPUT_NAME shoots-host)
 
 target_include_directories(ShootsHost PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -35,8 +36,8 @@ target_compile_features(ShootsHost PRIVATE cxx_std_20)
 shoots_host_apply_warnings(ShootsHost)
 
 install(TARGETS ShootsHost RUNTIME DESTINATION bin)
-install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/ShootsHost)
-install(PROGRAMS scripts/run_host.sh DESTINATION bin)
+install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/shoots-host)
+install(PROGRAMS scripts/run_host.sh DESTINATION share/shoots-host)
 
 if (SHOOTS_HOST_BUILD_TESTS)
   enable_testing()
