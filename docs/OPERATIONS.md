@@ -58,3 +58,25 @@ Tuning knobs:
 - `SHOOTS_HOST_MAX_INFLIGHT` (default `1` for this harness)
 - `SHOOTS_LOAD_CONCURRENCY` (default `64`)
 - `SHOOTS_LOAD_ROUNDS` (default `20`)
+
+
+## Log rotation guidance
+Preferred production default: rely on journald/systemd capture (`StandardOutput=journal`, `StandardError=journal`) and use journal retention policy for rotation.
+
+If file logging is required via service manager redirection, rotate with `logrotate` using:
+- size-based rotation (for example `10M`)
+- bounded retained files (for example `rotate 7`)
+- `copytruncate` only when process-level reopen hooks are unavailable
+
+Keep log format stable (`SHOOTS_HOST_LOG_FORMAT=text|json`) for downstream parsing and alert rules.
+
+## Health endpoint SLO guidance
+Use endpoints for separate signals:
+- `/livez`: process is alive; alert only on sustained failure (crash-loop or host unavailable).
+- `/readyz`: provider readiness; primary paging signal for serving impact.
+- `/healthz`: build/version/uptime context for diagnostics and release verification.
+
+Recommended alert posture:
+- page on `/readyz` failure ratio over a short window (for example >5% over 5m)
+- ticket/non-paging alert for intermittent `/livez` blips unless prolonged
+- include `/healthz` payload in runbook triage to confirm deployed version/build
