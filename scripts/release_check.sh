@@ -12,7 +12,8 @@ if [ -f .gitmodules ]; then
 fi
 
 # Guard against historical submodule metadata without invoking submodule commands.
-if git config --file .git/config --name-only --get-regexp '^submodule\..*\.path$' \
+# Use --local so this works with linked worktrees where .git is not a directory.
+if git config --local --name-only --get-regexp '^submodule\..*\.path$' \
   >/dev/null 2>&1; then
   echo "submodule entries are not allowed" >&2
   exit 1
