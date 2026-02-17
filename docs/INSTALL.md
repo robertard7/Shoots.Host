@@ -38,3 +38,17 @@ Notes:
 - Tarball metadata is normalized (sorted paths, fixed owner/group, deterministic mtimes).
 - Gzip output uses `-n` to strip timestamp/name from the gzip header.
 - `SOURCE_DATE_EPOCH` can be set to override the default commit timestamp seed.
+
+
+## Windows zip package
+```powershell
+./scripts/package_host.ps1
+```
+
+Expected artifact:
+- `dist/shoots-host-win64-<version>.zip`
+
+Run helper:
+```powershell
+./scripts/run_host.ps1
+```

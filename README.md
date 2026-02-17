@@ -75,6 +75,8 @@ curl -s http://127.0.0.1:8787/metrics
 ./scripts/install_host.sh
 ./scripts/package_host.sh
 ./scripts/release_check.sh
+./scripts/package_host.ps1
+./scripts/run_host.ps1
 ```
 
 ## Docs
