@@ -18,6 +18,11 @@ if git config --local --name-only --get-regexp '^submodule\..*\.path$' \
   echo "submodule entries are not allowed" >&2
   exit 1
 fi
+if git ls-files --stage | awk '$1 == "160000" { found=1; exit } END { exit found ? 0 : 1 }'; then
+  echo "gitlink entries are not allowed" >&2
+  exit 1
+fi
+
 if [ -n "${SHOOTS_UPDATE_SNAPSHOTS:-}" ]; then
   echo "SHOOTS_UPDATE_SNAPSHOTS must be unset for release checks" >&2
   exit 1
