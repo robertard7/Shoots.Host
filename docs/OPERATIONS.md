@@ -39,3 +39,15 @@ WantedBy=multi-user.target
 
 ## TLS
 Terminate TLS at a reverse proxy; keep Shoots.Host on loopback. See `docs/TLS.md`.
+
+## Bounded load sanity check
+Run a quick bounded overload check (expects some `429` responses):
+
+```bash
+./scripts/load_test_livez.sh
+```
+
+Tuning knobs:
+- `SHOOTS_HOST_MAX_INFLIGHT` (default `1` for this harness)
+- `SHOOTS_LOAD_CONCURRENCY` (default `64`)
+- `SHOOTS_LOAD_ROUNDS` (default `20`)
